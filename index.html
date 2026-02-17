@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phone Security Camera</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #222;
+            color: white;
+        }
+        
+        #container {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        
+        video, canvas {
+            width: 100%;
+            border: 2px solid #444;
+            border-radius: 8px;
+        }
+        
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+        
+        .recording {
+            color: #ff4444;
+            font-weight: bold;
+        }
+        
+        #serverUrl {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        button:disabled {
+            background: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>📱 Security Camera</h1>
+        
+        <input type="text" id="serverUrl" placeholder="Enter your PC's IP (e.g., 192.168.1.100:5000)">
+        <button id="startBtn">Start Monitoring</button>
+        
+        <div id="status">
+            <div>Status: <span id="statusText">Not started</span></div>
+            <div>Recording: <span id="recordingTime">--</span></div>
+        </div>
+        
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2"></script>
+    <script src="camera.js"></script>
+</body>
+</html>
