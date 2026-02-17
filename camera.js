@@ -7,9 +7,11 @@ let recordedChunks = [];
 let lastFrame = null;
 let recordingStartTime;
 let recordingInterval;
+let detectionCheckInterval;
 
 const MOTION_THRESHOLD = 30; // Adjust sensitivity
 const RECORDING_DURATION = 5 * 60 * 1000; // 5 minutes
+const PERSON_CHECK_INTERVAL = 500; // Check for person every 500ms
 
 document.getElementById('startBtn').addEventListener('click', startMonitoring);
 
@@ -43,7 +45,7 @@ async function startMonitoring() {
         // Load AI model
         updateStatus('Loading AI model...');
         model = await cocoSsd.load();
-        updateStatus('Monitoring for motion...');
+        updateStatus('Monitoring for people...');
         
         isMonitoring = true;
         document.getElementById('startBtn').disabled = true;
@@ -64,7 +66,8 @@ function detectMotion() {
         const motionDetected = compareFrames(currentFrame, lastFrame);
         
         if (motionDetected) {
-            startRecording();
+            // Motion detected, now check if it's a person
+            checkForPerson();
         }
     }
     
@@ -95,6 +98,24 @@ function compareFrames(frame1, frame2) {
     return motionPercentage > 2; // 2% of pixels changed
 }
 
+async function checkForPerson() {
+    // Draw current frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Run object detection
+    const predictions = await model.detect(canvas);
+    
+    // Check if any prediction is a person
+    const personDetected = predictions.some(prediction => 
+        prediction.class === 'person' && prediction.score > 0.5
+    );
+    
+    if (personDetected) {
+        updateStatus('👤 Person detected! Starting recording...');
+        startRecording();
+    }
+}
+
 async function detectAndDrawObjects() {
     const predictions = await model.detect(canvas);
     
@@ -103,13 +124,19 @@ async function detectAndDrawObjects() {
     predictions.forEach(prediction => {
         const [x, y, width, height] = prediction.bbox;
         
-        // Draw green box
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 3;
+        // Draw green box for person, yellow for others
+        if (prediction.class === 'person') {
+            ctx.strokeStyle = '#00ff00'; // Green for person
+            ctx.lineWidth = 4;
+        } else {
+            ctx.strokeStyle = '#ffff00'; // Yellow for other objects
+            ctx.lineWidth = 2;
+        }
+        
         ctx.strokeRect(x, y, width, height);
         
         // Draw label
-        ctx.fillStyle = '#00ff00';
+        ctx.fillStyle = prediction.class === 'person' ? '#00ff00' : '#ffff00';
         ctx.font = '18px Arial';
         ctx.fillText(
             `${prediction.class} ${Math.round(prediction.score * 100)}%`,
@@ -120,11 +147,13 @@ async function detectAndDrawObjects() {
 }
 
 function startRecording() {
+    if (isRecording) return; // Already recording
+    
     isRecording = true;
     recordedChunks = [];
     recordingStartTime = Date.now();
     
-    updateStatus('🔴 RECORDING!', true);
+    updateStatus('🔴 RECORDING PERSON!', true);
     
     const stream = canvas.captureStream(30); // 30 FPS
     mediaRecorder = new MediaRecorder(stream, {
@@ -180,7 +209,7 @@ async function uploadRecording() {
         });
         
         if (response.ok) {
-            updateStatus('✅ Video uploaded! Monitoring resumed...');
+            updateStatus('✅ Video uploaded! Monitoring for people...');
             document.getElementById('recordingTime').textContent = '--';
         } else {
             updateStatus('❌ Upload failed. Monitoring resumed...');
