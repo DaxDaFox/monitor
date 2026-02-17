@@ -174,7 +174,7 @@ async function uploadRecording() {
     formData.append('video', blob, `recording_${timestamp}.webm`);
     
     try {
-        const response = await fetch(`http://${serverUrl}/upload`, {
+        const response = await fetch(`https://${serverUrl}/upload`, {
             method: 'POST',
             body: formData
         });
